@@ -1,30 +1,57 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-function ScratchModal({ isOpen, onClose, onSubmitAgentData }) {
+import {MoveRight} from "lucide-react"
+function ScratchModal({ isOpen, onClose }) {
     if (!isOpen) return null;
     const navigate = useNavigate();
     const [scratchModal, setIsScratchModal] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+    
     const handleScratchModel = () => setIsScratchModal(!scratchModal);
     
-    const handleScratchModelSubmit = (e) => {
+    const handleScratchModelSubmit = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
+        setError(null);
+        
         const formData = new FormData(e.target);
-        const jsonResponse = {
+        const jsonData = {
             name: formData.get("name"),
             background: formData.get("background"),
             model: formData.get("model"),
             goal: formData.get("goal"),
             expected_output: formData.get("expected_output"),
         };
-        onSubmitAgentData(jsonResponse);
-        navigate("/agent");
-        onClose();
+
+        try {
+            const response = await fetch('http://localhost:5000/api/agent', { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(jsonData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Success:', data);
+            navigate("/agent");
+            onClose();
+        } catch (error) {
+            console.error('Error:', error);
+            setError('Failed to create agent. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
     
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg  max-w-2xl p-8 relative shadow-lg">
+            <div className="bg-white rounded-lg max-w-xl w-[80vw] p-8 relative shadow-lg">
                 <button
                     className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
                     onClick={onClose}
@@ -33,36 +60,51 @@ function ScratchModal({ isOpen, onClose, onSubmitAgentData }) {
                 </button>
                 <h2 className="text-xl font-semibold mb-4">Create New AI Agent</h2>
                 <hr className="border-gray-200 mb-6" />
-                <p className="text-gray-600 mb-6">
-                    What do you want your AI Agent to help you with? Let us help you configure the AI for you! 😊
-                </p>
-                <div className="bg-slate-50 rounded-lg ">
-                <label className="block text-gray-700 font-medium p-2  text-sm">
-                    What do you want the AI Agent to help with?
-                </label>
-                <input
-                    type="text"
-                    placeholder="Type what you want to achieve"
-                    className="w-full bg-slate-50 rounded-md px-4 py-2 focus:ring-0 focus:outline-none"
-                />
+                
+                {error && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                        {error}
+                    </div>
+                )}
+
+                <div className="bg-slate-50 rounded-lg">
+                    <label className="block text-gray-700 font-medium p-2 text-sm">
+                        What do you want the AI Agent to help with?
+                    </label>
+                    <input
+                        type="text"
+                        placeholder="Type what you want to achieve"
+                        className="w-full bg-slate-50 rounded-md px-4 py-2 focus:ring-0 focus:outline-none"
+                    />
                 </div>
-                <button className="w-full mt-10 bg-[#4C61CC] text-white font-semibold py-3 rounded-lg hover:bg-[#455dd5] transition mb-6">
-                    ⚡ Generate AI Agent with AI
+
+                <button 
+                    className="w-full mt-10 bg-[#4C61CC] text-white font-semibold py-3 rounded-lg hover:bg-[#455dd5] transition mb-6"
+                    disabled={isLoading}
+                >
+                    {isLoading ? 'Creating Agent...' : ' Generate AI Agent with AI'}
                 </button>
-                <div class="relative flex items-center py-5">
-  <div class="flex-grow border-t border-gray-300"></div>
-  <span class="flex-shrink px-10 text-gray-600">Or</span>
-  <div class="flex-grow border-t border-gray-300"></div>
-</div>
+
+                <div className="relative flex items-center py-5">
+                    <div className="flex-grow border-t border-gray-300"></div>
+                    <span className="flex-shrink px-10 text-gray-600">Or</span>
+                    <div className="flex-grow border-t border-gray-300"></div>
+                </div>
+
                 <div className="flex justify-between items-center">
+                <button
+  className="flex items-center bg-white text-[#455dd5] border border-[#455dd5] rounded-lg py-3 px-4 hover:bg-gray-200 transition mr-2"
+  onClick={handleScratchModel}
+  disabled={isLoading}
+>
+  Create AI Agent From Scratch
+  <MoveRight size={16} className="ml-2" />
+</button>
                     <button 
-                        className="flex-1 bg-white text-[#455dd5] border border-[#455dd5] rounded-lg py-3 px-4 hover:bg-gray-200 transition mr-2"
-                        onClick={handleScratchModel}
+                        className="flex-1 bg-[#4C61CC] text-white border rounded-lg py-3 px-4 hover:bg-[#455dd5] transition ml-2"
+                        disabled={isLoading}
                     >
-                        Create AI Agent From Scratch →
-                    </button>
-                    <button className="flex-1 bg-[#4C61CC] text-white border  rounded-lg py-3 px-4 hover:bg-[#455dd5] transition ml-2">
-                        Customise From Template 🛠️
+                        Customise From Template 
                     </button>
                 </div>
 
@@ -129,8 +171,9 @@ function ScratchModal({ isOpen, onClose, onSubmitAgentData }) {
                                 <button
                                     type="submit"
                                     className="w-full bg-[#4C61CC] text-white font-semibold py-3 rounded-lg hover:bg-[#455dd5] transition"
+                                    disabled={isLoading}
                                 >
-                                    Submit
+                                    {isLoading ? 'Creating...' : 'Submit'}
                                 </button>
                             </form>
                         </div>
@@ -141,7 +184,7 @@ function ScratchModal({ isOpen, onClose, onSubmitAgentData }) {
     );
 }
 
-const AiAgent = ({ onSubmitAgentData }) => {
+const AiAgent = () => {
     const [isModalOpen, setModalOpen] = useState(false);
 
     const openModal = () => setModalOpen(true);
@@ -157,8 +200,7 @@ const AiAgent = ({ onSubmitAgentData }) => {
             </button>
             <ScratchModal 
                 isOpen={isModalOpen} 
-                onClose={closeModal} 
-                onSubmitAgentData={onSubmitAgentData}
+                onClose={closeModal}
             />
         </div>
     );

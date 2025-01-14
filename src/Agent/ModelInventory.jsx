@@ -1,64 +1,81 @@
-const ModelMarketPlace = ({ agentData }) => {
+import React, { useEffect, useState } from 'react';
+import {Copy} from "lucide-react"
+
+const AgentCard = ({ agent }) => {
     const handleClone = () => {
-        if (agentData) {
-            const cloneData = { ...agentData };
+        if (agent) {
+            const cloneData = { ...agent };
             navigator.clipboard.writeText(JSON.stringify(cloneData, null, 2))
-                .then(() => {
-                    alert('Agent configuration copied to clipboard!');
-                })
-                .catch(err => {
-                    console.error('Failed to copy:', err);
-                });
+                .then(() => alert('Agent configuration copied to clipboard!'))
+                .catch((err) => console.error('Failed to copy:', err));
         }
     };
 
-    if (!agentData) {
-        return (
-            <div className="h-screen flex items-center justify-center">
-                <p className="text-xl text-gray-600">
-                    No agent data available. Please create an agent first.
-                </p>
+    return (
+        <div className="bg-white shadow-lg rounded-2xl p-6 w-80">
+            <div className="flex items-center gap-4 mb-4">
+                <div>
+                    <h2 className="text-lg font-semibold">{agent.name}</h2>
+                    <p className="text-gray-500 text-sm">{agent.goal}</p>
+                </div>
             </div>
-        );
+            <p className="text-gray-600 text-sm mb-6">{agent.description}</p>
+            <button
+                onClick={handleClone}
+                className="flex items-center gap-2 justify-center w-full py-2 px-4 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-200 transition"
+            >
+                <Copy/>
+                Clone
+            </button>
+        </div>
+    );
+};
+
+
+
+const ModelMarketPlace = () => {
+    const [agents, setAgents] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchAgents = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/agents'); 
+                if (!response.ok) {
+                    throw new Error('Failed to fetch agents');
+                }
+                const data = await response.json();
+                setAgents(data);
+                setLoading(false);
+            } catch (err) {
+                setError(err.message);
+                setLoading(false);
+            }
+        };
+
+        fetchAgents();
+    }, []);
+    if (loading) {
+        return <p>Loading...</p>;
+    }
+
+    if (error) {
+        return <p>Error: {error}</p>;
+    }
+
+    if (agents.length === 0) {
+        return <p>No agents available.</p>;
     }
 
     return (
-        <div className="p-4">
-            <div className="bg-white rounded-3xl shadow-lg p-6 max-w-md">
-                <div className="flex items-center gap-4 mb-2">
-                    <div className="w-12 h-12 bg-gray-200 rounded-full overflow-hidden">
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-semibold">{agentData.name}</h2>
-                    </div>
-                </div>
-                
-                <p className="text-gray-500 mb-6">
-                    {agentData.background}
-                </p>
-
-                <button 
-                    onClick={handleClone}
-                    className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                    <svg 
-                        className="w-5 h-5" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                    >
-                        <path 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            strokeWidth={2} 
-                            d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" 
-                        />
-                    </svg>
-                    Clone
-                </button>
-            </div>
+        <div className="flex flex-wrap gap-6 p-4">
+            {agents.map((agent, index) => (
+                <AgentCard key={index} agent={agent} />
+            ))}
         </div>
     );
+
 };
 
 export default ModelMarketPlace;
