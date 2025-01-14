@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function CustomModal({ isOpen, onClose, onSubmitAgentData }) {
+function ScratchModal({ isOpen, onClose, onSubmitAgentData }) {
     if (!isOpen) return null;
     const navigate = useNavigate();
     const [scratchModal, setIsScratchModal] = useState(false);
@@ -155,7 +155,7 @@ const AiAgent = ({ onSubmitAgentData }) => {
             >
                 Create An AI Agent
             </button>
-            <CustomModal 
+            <ScratchModal 
                 isOpen={isModalOpen} 
                 onClose={closeModal} 
                 onSubmitAgentData={onSubmitAgentData}
